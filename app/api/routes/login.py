@@ -4,5 +4,5 @@ router = APIRouter(tags=["login"])
 
 
 @router.get("/login")
-def hello() -> str:
+async def hello() -> str:
     return "Hello world!"
