@@ -1,8 +1,4 @@
-from pydantic import (
-    computed_field,
-    PostgresDsn,
-)
-from pydantic_core import MultiHostUrl
+from pydantic import computed_field
 from pydantic_settings import BaseSettings
 
 
@@ -14,24 +10,15 @@ class Settings(BaseSettings):
 
     # TODO: do some kind of loading of enviromental variables for these parameters
     # pydantic BaseSettings will handle the rest for us
-    POSTGRES_SERVER: str = ""
+    POSTGRES_SERVER: str = "127.0.0.1"
     POSTGRES_PORT: int = 5432
-    POSTGRES_USER: str = ""
-    POSTGRES_PASSWORD: str = ""
-    POSTGRES_DB: str = ""
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = "1234"
+    POSTGRES_DB: str = "rzd_database"
 
     @computed_field
-    def DATABASE_URI(self) -> PostgresDsn:
-        return PostgresDsn(
-            MultiHostUrl.build(
-                scheme="postgresql+psycopg",
-                username=self.POSTGRES_USER,
-                password=self.POSTGRES_PASSWORD,
-                host=self.POSTGRES_SERVER,
-                port=self.POSTGRES_PORT,
-                path=self.POSTGRES_DB,
-            )
-        )
+    def DATABASE_URI(self) -> str:
+        return f"postgres://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}"
 
 
 settings = Settings()
