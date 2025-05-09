@@ -15,19 +15,15 @@ class Car(BaseModel):
 
 class CarGroup(BaseModel):
     car_type: str
-    place_quantity: int
-    cars: list[Car] = []
-
-    def add_car(self, car: Car) -> None:
-        self.cars.append(car)
+    free_seats: int
+    min_price: int
 
 
 class Train(BaseModel):
-    train_number: str
-    train_name: str
+    number: str
+    name: str
     origin_station_name: str
-    origin_station_code: str
     destination_station_name: str
-    destination_station_code: str
     departure_time: datetime.datetime
     arrival_time: datetime.datetime
+    car_groups: list[CarGroup]
