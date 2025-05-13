@@ -4,9 +4,9 @@ from tortoise.contrib.fastapi import RegisterTortoise
 from app.core.config import settings
 from app.api.main import api_router
 from app.api.routes.train import setup_cookies
+from contextlib import asynccontextmanager
 
 # from app.core.db import load_stations
-from contextlib import asynccontextmanager
 
 
 @asynccontextmanager
