@@ -1,5 +1,7 @@
 import datetime
-from pydantic import BaseModel
+from typing import Annotated
+from pydantic import BaseModel, AfterValidator
+from app.util.validators import validate_traincode, validate_date, validate_time
 
 # !!! Probably not the last version of these models (will be edited) !!!
 
@@ -27,3 +29,21 @@ class Train(BaseModel):
     departure_time: datetime.datetime
     arrival_time: datetime.datetime
     car_groups: list[CarGroup]
+
+
+class Station(BaseModel):
+    name: str
+    code: str
+
+
+class TrainsRequest(BaseModel):
+    from_code: Annotated[str, AfterValidator(validate_traincode)] = "2000000"
+    to_code: Annotated[str, AfterValidator(validate_traincode)] = "2000000"
+    date: Annotated[str, AfterValidator(validate_date)] = "%d.%m.%Y"
+
+
+class SeatsRequest(BaseModel):
+    train_request: TrainsRequest
+    train_number: str = "000A"
+    departure_time: Annotated[str, AfterValidator(validate_time)]
+    arrival_time: Annotated[str, AfterValidator(validate_time)]
