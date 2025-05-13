@@ -1,9 +1,8 @@
-import datetime
+from datetime import datetime
 from typing import Annotated
-from pydantic import BaseModel, AfterValidator
-from app.services.validation import validate_traincode, validate_date, validate_time
-from pydantic import BaseModel, AfterValidator, EmailStr, validator
-from app.services.validation import validate_traincode, validate_date, validate_time
+from app.services.validation import validate_traincode, validate_date, validate_time, validate_user
+from pydantic import BaseModel, AfterValidator, EmailStr, UUID4, ValidationInfo
+from pydantic.functional_validators import field_validator
 
 
 class UserBase(BaseModel):
@@ -13,26 +12,38 @@ class UserBase(BaseModel):
 
 class UserRegister(UserBase):
     password: str
-    password_again: str
+    confirmed_password: str
 
-    @validator("confirm_correct")
-    def verify_passwords(cls, v, values, **kwargs):
-        password = values.get("password")
-
-        if v != password:
+    @field_validator('confirmed_password', mode='after')
+    @classmethod
+    def check_matching_passwords(cls, value: str, info: ValidationInfo):
+        if value != info.data['password']:
             raise ValueError("Passwords do not math")
-
-        return v
-
+        return value
 
 class UserCreate(UserBase):
     password: str
 
+class User(UserBase):
+    id: Annotated[UUID4, AfterValidator(validate_user)]
 
 class UserLogin(UserBase):
     email: EmailStr
     password: str
 
+class JwtTokenSchema(BaseModel):
+    token: str
+    payload: dict
+    expire: datetime
+
+
+class TokenPair(BaseModel):
+    access: JwtTokenSchema
+    refresh: JwtTokenSchema
+
+
+class RefreshToken(BaseModel):
+    refresh: str
 
 class PathSegment(BaseModel):
     start_code: Annotated[str, AfterValidator(validate_traincode)] = "2000000"
@@ -62,8 +73,8 @@ class Train(BaseModel):
     name: str
     origin_station_name: str
     destination_station_name: str
-    departure_time: datetime.datetime
-    arrival_time: datetime.datetime
+    departure_time: datetime
+    arrival_time: datetime
     car_groups: list[CarGroup]
 
 
