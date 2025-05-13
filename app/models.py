@@ -1,24 +1,30 @@
 import datetime
 from typing import Annotated
 from pydantic import BaseModel, AfterValidator
-from app.util.validators import validate_traincode, validate_date, validate_time
-
-# !!! Probably not the last version of these models (will be edited) !!!
+from app.services.validation import validate_traincode, validate_date, validate_time
 
 
-class Compartment(BaseModel):
-    number: int
-    free_places: list[str]
+class PathSegment(BaseModel):
+    start_code: Annotated[str, AfterValidator(validate_traincode)] = "2000000"
+    end_code: Annotated[str, AfterValidator(validate_traincode)] = "2000000"
+    start_time: Annotated[str, AfterValidator(validate_time)] = "%H:%M"
+    end_time: Annotated[str, AfterValidator(validate_time)] = "%H:%M"
+
+
+class Seat(BaseModel):
+    number: str
+    free_segments: list[PathSegment]
 
 
 class Car(BaseModel):
-    compartments: list[Compartment]
+    free_seats: list[Seat]
 
 
 class CarGroup(BaseModel):
     car_type: str
     free_seats: int
     min_price: int
+    cars: list[Car] = []
 
 
 class Train(BaseModel):
@@ -45,5 +51,5 @@ class TrainsRequest(BaseModel):
 class SeatsRequest(BaseModel):
     train_request: TrainsRequest
     train_number: str = "000A"
-    departure_time: Annotated[str, AfterValidator(validate_time)]
-    arrival_time: Annotated[str, AfterValidator(validate_time)]
+    departure_time: Annotated[str, AfterValidator(validate_time)] = "%H:%M"
+    arrival_time: Annotated[str, AfterValidator(validate_time)] = "%H:%M"

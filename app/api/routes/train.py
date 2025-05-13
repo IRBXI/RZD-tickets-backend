@@ -1,7 +1,9 @@
 from asyncio import sleep
-from app.models import Train, Station, TrainsRequest, SeatsRequest
-from app.util.helpers import build_url
-from app.util.json_converter import get_train_list
+import functools
+from app.models import Train, Station, TrainsRequest, SeatsRequest, CarGroup
+from app.services.url import build_url
+from app.util.functional import Pipe, async_map
+from app.services.json_convertion import get_train_list, get_stations
 from fastapi import APIRouter
 from httpx import AsyncClient
 from http import HTTPStatus
@@ -16,7 +18,8 @@ GET_TRAINS_URL = build_url(
     md=0,
 )
 STATIONS_URL = build_url(
-    "https://pass.rzd.ru/ticket/services/route/basicRoute", STRUCTURE_ID=5418
+    "https://pass.rzd.ru/ticket/services/route/basicRoute",
+    STRUCTURE_ID=5418,
 )
 
 
@@ -45,6 +48,10 @@ async def rzd_post(url: str):
     return r.json()
 
 
+async def get_train_seats(Station):
+    pass
+
+
 @router.post("/trains/get_trains", response_model=list[Train])
 async def get_train(
     request_data: TrainsRequest,
@@ -64,8 +71,8 @@ async def get_train(
     return get_train_list(response_data)
 
 
-@router.post("/trains/get_seats")
-async def get_train_seats(
+@router.post("/trains/get_seats", response_model=list[CarGroup])
+async def get_train_seats_with_segment_info(
     request_data: SeatsRequest,
 ):
     url = build_url(
@@ -79,5 +86,12 @@ async def get_train_seats(
     if "error" in response_data:
         return response_data
 
-    # not done yet
-    pass
+    # json -> list[Station] -> list[SeatsRequest] -> list[list[CarGroup]] -> list[CarGroup]
+    # fmt: off
+    return (
+        Pipe(response_data)
+            | get_stations
+            
+            
+    ).value
+    # fmt: on
