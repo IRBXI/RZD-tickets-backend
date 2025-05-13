@@ -1,9 +1,33 @@
 import datetime
 from typing import Annotated
-from pydantic import BaseModel, AfterValidator
+from pydantic import BaseModel, AfterValidator, EmailStr, validator
 from app.util.validators import validate_traincode, validate_date, validate_time
 
 # !!! Probably not the last version of these models (will be edited) !!!
+
+class UserBase(BaseModel):
+    email: EmailStr
+    name: str
+
+class UserRegister(UserBase):
+    password: str
+    password_again: str
+
+    @validator("confirm_correct")
+    def verify_passwords(cls, v, values, **kwargs):
+        password = values.get("password");
+
+        if v != password:
+            raise ValueError("Passwords do not math");
+
+        return v
+
+class UserCreate(UserBase):
+    password: str
+
+class UserLogin(UserBase):
+    email: EmailStr
+    password: str
 
 
 class Compartment(BaseModel):
