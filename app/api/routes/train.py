@@ -1,13 +1,19 @@
 from asyncio import sleep
 from app.models import Train, Station, TrainsRequest, SeatsRequest
+from app.util.helpers import build_url
 from app.util.json_converter import get_train_list
 from fastapi import APIRouter
-from httpx import AsyncClient, request
+from httpx import AsyncClient
 from http import HTTPStatus
 
 DEFAULT_URL = "https://pass.rzd.ru"
-GET_TRAINS_URL = "https://pass.rzd.ru/timetable/public/ru?layer_id=5827&dir=0&tfl=3&checkSeats=1&md=0"
-STATIONS_URL = "https://pass.rzd.ru/ticket/services/route/basicRoute?STRUCTURE_ID=5418"
+GET_TRAINS_URL = build_url(
+    "https://pass.rzd.ru/timetable/public/ru",
+    {"layer_id": "5827", "dir": "0", "tfl": "3", "checkSeats": "1", "md": "0"},
+)
+STATIONS_URL = build_url(
+    "https://pass.rzd.ru/ticket/services/route/basicRoute", {"STRUCTURE_ID": "5418"}
+)
 
 
 router = APIRouter(tags=["train"])
@@ -39,7 +45,14 @@ async def rzd_post(url: str) -> dict:
 async def get_train(
     request_data: TrainsRequest,
 ):
-    url = f"{GET_TRAINS_URL}&code0={request_data.from_code}&code1={request_data.to_code}&dt0={request_data.date}"
+    url = build_url(
+        GET_TRAINS_URL,
+        {
+            "code0": request_data.from_code,
+            "code1": request_data.to_code,
+            "dt0": request_data.date,
+        },
+    )
 
     response_data = await rzd_post(url)
 
@@ -53,7 +66,13 @@ async def get_train(
 async def get_train_seats(
     request_data: SeatsRequest,
 ):
-    url = f"{STATIONS_URL}&trainNumber={request_data.train_number}&depDate={request_data.train_request.date}"
+    url = build_url(
+        STATIONS_URL,
+        {
+            "trainNumber": request_data.train_number,
+            "depDate": request_data.train_request.date,
+        },
+    )
 
     response_data = await rzd_post(url)
 
