@@ -1,7 +1,8 @@
-import datetime
+from datetime import datetime
 from typing import Annotated
-from pydantic import BaseModel, AfterValidator, EmailStr, validator
-from app.util.validators import validate_traincode, validate_date, validate_time
+from pydantic import BaseModel, AfterValidator, EmailStr, UUID4, ValidationInfo
+from pydantic.functional_validators import field_validator
+from app.util.validators import validate_traincode, validate_date, validate_time, validate_user
 
 # !!! Probably not the last version of these models (will be edited) !!!
 
@@ -11,19 +12,20 @@ class UserBase(BaseModel):
 
 class UserRegister(UserBase):
     password: str
-    password_again: str
+    confirmed_password: str
 
-    @validator("confirm_correct")
-    def verify_passwords(cls, v, values, **kwargs):
-        password = values.get("password");
-
-        if v != password:
-            raise ValueError("Passwords do not math");
-
-        return v
+    @field_validator('confirmed_password', mode='after')
+    @classmethod
+    def check_matching_passwords(cls, value: str, info: ValidationInfo):
+        if value != info.data['password']:
+            raise ValueError("Passwords do not math")
+        return value
 
 class UserCreate(UserBase):
     password: str
+
+class User(UserBase):
+    id: Annotated[UUID4, AfterValidator(validate_user)]
 
 class UserLogin(UserBase):
     email: EmailStr
@@ -63,8 +65,8 @@ class Train(BaseModel):
     name: str
     origin_station_name: str
     destination_station_name: str
-    departure_time: datetime.datetime
-    arrival_time: datetime.datetime
+    departure_time: datetime
+    arrival_time: datetime
     car_groups: list[CarGroup]
 
 
