@@ -11,6 +11,7 @@ class BaseModel(Model):
     async def get_by_id(cls, record_id: int):
         return await cls.get_or_none(id=record_id)
 
+
 class User(BaseModel):
     name = fields.CharField(max_length=255)
     email = fields.CharField(max_length=255, unique=True)
@@ -22,8 +23,6 @@ class User(BaseModel):
     async def find_by_email(cls, email: str):
         return await cls.get_or_none(email=email)
 
-    @classmethod
-    async def validate()
 
 class Station(Model):
     # Stations use 7 character long ids
