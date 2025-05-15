@@ -11,12 +11,12 @@ from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    await RegisterTortoise(
-        app,
-        db_url=str(settings.DATABASE_URI),
-        modules={"models": ["app.db_models"]},
-        generate_schemas=True,
-    )
+    # await RegisterTortoise(
+    #     app,
+    #     db_url=str(settings.DATABASE_URI),
+    #     modules={"models": ["app.db_models"]},
+    #     generate_schemas=True,
+    # )
     await setup_cookies()
     # await load_stations()
 
