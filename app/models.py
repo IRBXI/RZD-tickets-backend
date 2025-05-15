@@ -1,9 +1,11 @@
 import datetime
 from typing import Annotated
 from pydantic import BaseModel, AfterValidator
-from app.services.validation import validate_traincode, validate_date, validate_time
 from pydantic import BaseModel, AfterValidator, EmailStr, validator
-from app.services.validation import validate_traincode, validate_date, validate_time
+from app.services.validation import validate_station_code, validate_date, validate_time
+
+
+StationCode = Annotated[str, AfterValidator(validate_station_code)]
 
 
 class UserBase(BaseModel):
@@ -35,26 +37,22 @@ class UserLogin(UserBase):
 
 
 class PathSegment(BaseModel):
-    start_code: Annotated[str, AfterValidator(validate_traincode)] = "2000000"
-    end_code: Annotated[str, AfterValidator(validate_traincode)] = "2000000"
+    start_station_name: str
+    end_station_name: str
     start_time: Annotated[str, AfterValidator(validate_time)] = "%H:%M"
     end_time: Annotated[str, AfterValidator(validate_time)] = "%H:%M"
 
 
-class Seat(BaseModel):
-    number: str
-    free_segments: list[PathSegment]
-
-
 class Car(BaseModel):
-    free_seats: list[Seat]
+    car_number: int
+    car_type: str
+    free_seats: dict[str, list[PathSegment]]
 
 
 class CarGroup(BaseModel):
     car_type: str
     free_seats: int
     min_price: int
-    cars: list[Car] = []
 
 
 class Train(BaseModel):
@@ -67,14 +65,17 @@ class Train(BaseModel):
     car_groups: list[CarGroup]
 
 
-class Station(BaseModel):
-    name: str
-    code: str
+class Stop(BaseModel):
+    station_name: str
+    station_code: StationCode = "2000000"
+    date: Annotated[str, AfterValidator(validate_date)] | None
+    departure_time: Annotated[str, AfterValidator(validate_time)] | None
+    arrival_time: Annotated[str, AfterValidator(validate_time)] | None
 
 
 class TrainsRequest(BaseModel):
-    from_code: Annotated[str, AfterValidator(validate_traincode)] = "2000000"
-    to_code: Annotated[str, AfterValidator(validate_traincode)] = "2000000"
+    from_code: StationCode = "2000000"
+    to_code: StationCode = "2000000"
     date: Annotated[str, AfterValidator(validate_date)] = "%d.%m.%Y"
 
 

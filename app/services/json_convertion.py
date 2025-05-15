@@ -1,5 +1,6 @@
 from datetime import datetime
-from app.models import Train, CarGroup, Station
+from app.models import Train, CarGroup, Stop, PathSegment, Car
+import json as js
 
 
 # Coverts a json from the rzd api to a list[Train]
@@ -30,12 +31,68 @@ def get_train_list(json: dict) -> list[Train]:
     ]
 
 
-def get_stations(json: dict) -> list[Station]:
-    stations = [stop["station"] for stop in json["data"]["routes"][0]["stops"]]
+def get_stops(json: dict) -> list[Stop]:
+    stops = json["data"]["routes"][0]["stops"]
     return [
-        Station(
-            name=station["name"],
-            code=station["code"],
+        Stop(
+            station_name=stop["station"]["name"],
+            station_code=str(stop["station"]["code"]),
+            date=(
+                stop["depTimeMSK"].split()[0].replace("-", ".")
+                if stop["depTimeMSK"] is not None
+                else None
+            ),
+            departure_time=(
+                stop["depTimeMSK"].split()[1]
+                if stop["depTimeMSK"] is not None
+                else None
+            ),
+            arrival_time=(
+                stop["arvTimeMSK"].split()[1]
+                if stop["arvTimeMSK"] is not None
+                else None
+            ),
         )
-        for station in stations
+        for stop in stops
     ]
+
+
+def get_seats_from_str(seats_str: str) -> list[str]:
+    seats = seats_str.split(",")
+    res = []
+    for s in seats:
+        s = "".join(c for c in s if c.isdigit() or c == "-")
+        # TODO: take into account seats with 'M' or 'Ж' in seat number
+        if "-" in s:
+            first, last = map(int, s.split("-"))
+            for i in range(first, last + 1):
+                res.append("{:03d}".format(i))
+            continue
+        res.append("{:03d}".format(int(s)))
+
+    return res
+
+
+def get_cars(json: dict) -> dict[int, Car]:
+    json = json["lst"][0]
+
+    path_segment = PathSegment(
+        start_station_name=json["station0"],
+        end_station_name=json["station1"],
+        start_time=json["time0"],
+        end_time=json["time1"],
+    )
+
+    res: dict[int, Car] = {}
+    cars = json["cars"]
+    for car in cars:
+        new_car = Car(
+            car_number=car["cnumber"],
+            car_type=car["catLabelLoc"],
+            free_seats={},
+        )
+        for seat in get_seats_from_str(car["places"]):
+            new_car.free_seats[seat] = [path_segment]
+        res[new_car.car_number] = new_car
+
+    return res

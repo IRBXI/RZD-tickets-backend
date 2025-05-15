@@ -1,7 +1,7 @@
 from datetime import datetime
 
 
-def validate_traincode(s: str):
+def validate_station_code(s: str):
     if len(s) != 7:
         raise ValueError
     return s
