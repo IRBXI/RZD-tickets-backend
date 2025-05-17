@@ -1,6 +1,5 @@
 from datetime import datetime
 from app.models import Train, CarGroup, Stop, PathSegment, Car
-import json as js
 
 
 # Coverts a json from the rzd api to a list[Train]

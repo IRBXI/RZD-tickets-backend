@@ -24,9 +24,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
 
 
-origins = [
-    "http://127.0.0.1:3000",
-]
+origins = ["http://127.0.0.1:3000", "http://localhost:3000"]
 
 
 app = FastAPI(openapi_url=f"{settings.API_V1_STR}/openapi.json", lifespan=lifespan)
