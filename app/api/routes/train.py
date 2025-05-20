@@ -19,7 +19,7 @@ async def setup_api():
     train_api = await RZD_TrainAPI.create()
 
 
-@router.post("/trains/get_trains", response_model=list[Train] | dict)
+@router.post("/trains/get_trains", response_model=list[Train])
 async def get_train(
     request_data: TrainsRequest,
 ):
@@ -31,7 +31,7 @@ async def get_train(
     return trains
 
 
-@router.post("/trains/get_seats", response_model=dict[int, Car] | dict)
+@router.post("/trains/get_seats", response_model=dict[int, Car])
 async def get_seats(
     request_data: SeatsRequest,
 ):

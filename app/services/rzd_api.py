@@ -1,4 +1,3 @@
-from typing import Self
 from app.models import Stop, SeatsRequest, StationCode, TrainsRequest, Car, Train
 from app.util.url import build_url
 from app.util.functional import async_map
@@ -45,7 +44,7 @@ class RZD_TrainAPI(TrainAPI):
         self._client = AsyncClient()
 
     @classmethod
-    async def create(cls) -> Self:
+    async def create(cls):
         self = cls()
         self.__init__()
         await self._setup_cookies()
