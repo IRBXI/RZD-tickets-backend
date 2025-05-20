@@ -1,7 +1,5 @@
-from app.db_models import Station
+from app.models.db_models import Station
 import pandas as pd
-
-
 
 
 async def load_stations():

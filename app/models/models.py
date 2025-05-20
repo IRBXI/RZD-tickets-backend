@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Annotated
 from pydantic import BaseModel, AfterValidator, EmailStr, UUID4, ValidationInfo
 from pydantic.functional_validators import field_validator
-from app.services.validation import (
+from .validation import (
     validate_station_code,
     validate_date,
     validate_time,
