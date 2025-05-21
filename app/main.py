@@ -3,25 +3,25 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from tortoise.contrib.fastapi import RegisterTortoise
 from app.services.rzd_APIs import RZD_TrainAPI, RZD_StationAPI
+from app.repositories.tortoise_stations_repo import TortoiseStationsRepo
 from app.core.config import settings
 from app.api.main import api_router
 from contextlib import asynccontextmanager
 
-# from app.core.db import load_stations
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    # await RegisterTortoise(
-    #     app,
-    #     db_url=str(settings.DATABASE_URI),
-    #     modules={"models": ["app.db_models"]},
-    #     generate_schemas=True,
-    # )
+    await RegisterTortoise(
+        app,
+        db_url=str(settings.DATABASE_URI),
+        modules={"models": ["app.models.db_models"]},
+        generate_schemas=True,
+    )
 
-    # Creating an instances of a singleton classes which will be used by our routers
+    # Creating instances of singleton classes which will be used by our routers
     await RZD_TrainAPI.create()
     await RZD_StationAPI.create()
+    TortoiseStationsRepo()
 
     yield
 

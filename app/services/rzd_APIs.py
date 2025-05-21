@@ -1,3 +1,4 @@
+from typing import Awaitable
 from app.models import (
     Stop,
     SeatsRequest,
@@ -90,7 +91,7 @@ class RZD_TrainAPI(TrainAPI):
     async def get_trains(
         self,
         request_data: TrainsRequest,
-    ) -> list[Train]:
+    ) -> Awaitable[list[Train]]:
         url = build_url(
             RZD_TrainAPI._GET_TRAINS_URL,
             code0=request_data.from_code,
@@ -108,7 +109,7 @@ class RZD_TrainAPI(TrainAPI):
     async def get_train_seats(
         self,
         request_data: SeatsRequest,
-    ) -> dict[int, Car]:
+    ) -> Awaitable[dict[int, Car]]:
         url = build_url(
             RZD_TrainAPI._STATIONS_URL,
             trainNumber=request_data.train_number,
@@ -208,7 +209,7 @@ class RZD_StationAPI(StationAPI):
     async def _setup_cookies(self):
         await self._client.get(RZD_TrainAPI._DEFAULT_URL)
 
-    async def get_station_code(self, name: str) -> StationCode:
+    async def get_station_code(self, name: str) -> Awaitable[str]:
         name = name.upper()
 
         url = build_url(
@@ -223,6 +224,6 @@ class RZD_StationAPI(StationAPI):
 
         for station in response_data.json():
             if station["n"] == name:
-                return str(station["c"])
+                return str(station["c"])  # type: ignore
 
-        return ""
+        return ""  # type: ignore
