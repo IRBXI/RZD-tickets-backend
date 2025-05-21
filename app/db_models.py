@@ -1,10 +1,11 @@
 from tortoise.models import Model
 from tortoise import fields
 from passlib.context import CryptContext
+from tomlkit.items import DateTime
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def verify_password(plain, hashed):
+def verify_password(plain: str, hashed: str):
     return pwd_context.verify(plain, hashed)
 
 def hash_password(password: str):
@@ -26,6 +27,10 @@ class User(BaseModel):
     name = fields.CharField(max_length=255)
     email = fields.CharField(max_length=255, unique=True)
     password = fields.CharField(max_length=255)
+    created_at = fields.DatetimeField
+    updated_at = fields.DatetimeField
+    active = fields.BooleanField
+
 
     class Meta:
         table = "users"
@@ -40,6 +45,15 @@ class User(BaseModel):
         if not user or not verify_password(password, user.password):
             return False
         return user
+
+
+class BannedToken(BaseModel):
+    expired: fields.DatetimeField
+    created_at: fields.DatetimeField
+
+    class Meta:
+        table = "bannedtokens"
+
 
 
 class Station(Model):

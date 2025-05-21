@@ -21,15 +21,19 @@ class UserRegister(UserBase):
             raise ValueError("Passwords do not math")
         return value
 
+
 class UserCreate(UserBase):
     password: str
+
 
 class User(UserBase):
     id: Annotated[UUID4, AfterValidator(validate_user)]
 
+
 class UserLogin(UserBase):
     email: EmailStr
     password: str
+
 
 class JwtTokenSchema(BaseModel):
     token: str

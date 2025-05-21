@@ -21,4 +21,11 @@ class Settings(BaseSettings):
         return f"postgres://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}"
 
 
+class AuthSettings(BaseSettings):
+    SECRET_KEY = "2d3a29f91e2c47f80394001c227622ac25eb40279b01df42d865fee9631dcaaf"
+    ALGORITHM = "HS256"
+    ACCESS_TOKEN_EXPIRES_MINUTES = 30
+    REFRESH_TOKEN_EXPIRES_MINUTES = 30 * 24 * 60 # in 20 days
+
+
 settings = Settings()
