@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await RegisterTortoise(
         app,
-        db_url=str(settings.DATABASE_URI),
+        db_url="sqlite://database.db",
         modules={"models": ["app.models.db_models"]},
         generate_schemas=True,
     )
