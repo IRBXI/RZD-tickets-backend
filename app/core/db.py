@@ -2,8 +2,6 @@ from app.db_models import Station
 import pandas as pd
 
 
-
-
 async def load_stations():
     # Check that moscow is in the db.
     # If it isn't there all the stations are probably not yet loaded in this db instance

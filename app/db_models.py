@@ -1,7 +1,6 @@
 from tortoise.models import Model
 from tortoise import fields
 from passlib.context import CryptContext
-from tomlkit.items import DateTime
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -13,7 +12,7 @@ def hash_password(password: str):
 
 
 class BaseModel(Model):
-    id = fields.IntField(primary_key=True)
+    id = fields.UUIDField(primary_key=True)
 
     class Meta:
         abstract = True

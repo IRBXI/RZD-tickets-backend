@@ -1,16 +1,24 @@
+from enum import auto
 import uuid
 import sys
 from datetime import timedelta, datetime, timezone
 
 from jose import jwt, JWTError
-from fastapi import Response
+from fastapi import Response, status, HTTPException
+
+from app.db_models import BannedToken
 from . import config
 
 from app.models import User, JwtTokenSchema, TokenPair
-from curses.ascii import ENQ
-from curses.ascii import alt
 from uuid import uuid4
 
+class AuthFailedException(HTTPException):
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authenticate failed",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 REFRESH_COOKIE_NAME = "refresh"
 SUB = "sub"
@@ -27,13 +35,13 @@ def _create_access_token(
     minutes: int | None = None
 ) -> JwtTokenSchema:
     expiration_date = _get_utc_current() + timedelta(
-        minutes=minutes or config.AuthSettings.ACCESS_TOKEN_EXPIRES_MINUTES
+        minutes=minutes or config.authSettings.ACCESS_TOKEN_EXPIRES_MINUTES
     )
 
     data[EXP] = expiration_date
 
     token = JwtTokenSchema(
-        token=jwt.encode(data, config.AuthSettings.SECRET_KEY, algorithm=config.AuthSettings.ALGORITHM),
+        token=jwt.encode(data, config.authSettings.SECRET_KEY, algorithm=config.authSettings.ALGORITHM),
         payload=data,
         expire=expiration_date
     )
@@ -43,12 +51,12 @@ def _create_access_token(
 def _create_refresh_token(
     data: dict
 ) -> JwtTokenSchema:
-    expiration_date = _get_utc_current() + timedelta(config.AuthSettings.REFRESH_TOKEN_EXPIRES_MINUTES)
+    expiration_date = _get_utc_current() + timedelta(config.authSettings.REFRESH_TOKEN_EXPIRES_MINUTES)
 
     data[EXP] = expiration_date
 
     token = JwtTokenSchema(
-        token=jwt.encode(data, config.AuthSettings.SECRET_KEY, algorithm=config.AuthSettings.ALGORITHM),
+        token=jwt.encode(data, config.authSettings.SECRET_KEY, algorithm=config.authSettings.ALGORITHM),
         payload=data,
         expire=expiration_date
     )
@@ -70,3 +78,34 @@ async def decode_access_token(
 ):
     try:
         data = jwt.decode(token, config.AuthSettings.SECRET_KEY, algorithms=[config.AuthSettings.ALGORITHM])
+        banned_token = await BannedToken.get_by_id(data[JTI])
+        if banned_token:
+            raise JWTError("This token is banned")
+    except JWTError:
+        print("fuck")
+        raise AuthFailedException()
+
+    return data
+
+
+def refresh_token_state(
+    token: str
+):
+    try:
+        data = jwt.decode(token, config.AuthSettings.SECRET_KEY, algorithms=[config.AuthSettings.ALGORITHM])
+    except JWTError as e:
+        print(str(e))
+        raise AuthFailedException()
+
+    return {"token": _create_access_token(data=data).token}
+
+def add_refresh_token_cookie(response: Response, token: str):
+    exp = _get_utc_current() + timedelta(minutes=config.authSettings.REFRESH_TOKEN_EXPIRES_MINUTES)
+    exp.replace(tzinfo=timezone.utc)
+
+    response.set_cookie(
+        key="refresh",
+        value=token,
+        expires=int(exp.timestamp()),
+        httponly=True
+    )

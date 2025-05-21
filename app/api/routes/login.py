@@ -1,11 +1,13 @@
 from fastapi import APIRouter, Response
 from fastapi.exceptions import HTTPException
-from fastapi.security import OAuth2AuthorizationCodeBearer
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
-import app.models as models
-import app.db_models as db_models
+from app import models, db_models
+from app.core.hash import hash_password, verify_password
 
 router = APIRouter(tags=["login"])
+
+oauth2_model = OAuth2PasswordBearer(tokenUrl="token")
 
 @router.post("/register", response_model=models.User)
 async def register_handler(
@@ -16,6 +18,7 @@ async def register_handler(
         raise HTTPException(status_code=400, detail="User already exists... Try anotha email vro...")
 
     user_data = data.dict(exclude={"confirmed_password"})
+    user_data["password"] = hash_password(user_data["password"])
     user = db_models.User(**user_data)
 
     await user.save()
@@ -28,5 +31,3 @@ async def login(
     user = await db_models.User.authorize(data.email, data.password)
     if not user:
         raise HTTPException(status_code=400, detail="Wrong user auth info")
-
-    user_data =
