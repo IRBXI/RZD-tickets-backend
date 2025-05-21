@@ -222,8 +222,14 @@ class RZD_StationAPI(StationAPI):
         if response_data.status_code != HTTPStatus.OK:
             raise APIUnavailableException("Couldn't get the response from RZD")
 
+        # first search for an exact match
         for station in response_data.json():
             if station["n"] == name:
+                return str(station["c"])  # type: ignore
+
+        # then search for a name which has a name we are searching for as a substring
+        for station in response_data.json():
+            if name in station["n"]:
                 return str(station["c"])  # type: ignore
 
         return ""  # type: ignore
