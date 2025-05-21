@@ -1,13 +1,30 @@
 from fastapi import APIRouter, Response
 from fastapi.exceptions import HTTPException
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import status, Cookie, Depends
+from fastapi.security import OAuth2PasswordBearer
+from typing import Any, Annotated
 
 from app import models, db_models
-from app.core.hash import hash_password, verify_password
+from app.db_models import hash_password
+from app.core.jwt import create_token_pair, add_refresh_token_cookie, refresh_token_state, decode_access_token
 
 router = APIRouter(tags=["login"])
 
 oauth2_model = OAuth2PasswordBearer(tokenUrl="token")
+
+class ForbiddenException(HTTPException):
+    def __init__(self, detail: Any = None) -> None:
+        super().__init__(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=detail if detail else "Forbidden",
+        )
+
+class BadRequestException(HTTPException):
+    def __init__(self, detail: Any = None) -> None:
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=detail if detail else "Bad request"
+        )
 
 @router.post("/register", response_model=models.User)
 async def register_handler(
@@ -20,6 +37,7 @@ async def register_handler(
     user_data = data.dict(exclude={"confirmed_password"})
     user_data["password"] = hash_password(user_data["password"])
     user = db_models.User(**user_data)
+    user.active = True
 
     await user.save()
 
@@ -31,3 +49,34 @@ async def login(
     user = await db_models.User.authorize(data.email, data.password)
     if not user:
         raise HTTPException(status_code=400, detail="Wrong user auth info")
+
+    if not user.active:
+        raise ForbiddenException()
+
+    user = models.User.from_orm(user)
+
+    token_pair = create_token_pair(user=user)
+
+    add_refresh_token_cookie(response=response, token=token_pair.refresh.token)
+
+    return {"token": token_pair.access.token}
+
+
+
+@router.post("/refresh")
+async def refresh(refresh: Annotated[str | None, Cookie()] = None):
+    print(refresh)
+    if not refresh:
+        raise BadRequestException(detail="refresh token required")
+    return refresh_token_state(token=refresh)
+
+
+@router.post("/logout", response_model=models.SuccessfulResponse)
+async def logout(
+    token: Annotated[str, Depends(oauth2_model)]
+):
+    data = await decode_access_token(token=token, db=db)
+
+    #TODO: blacklist the token
+
+    return {"msg": "Succesfully logout"}

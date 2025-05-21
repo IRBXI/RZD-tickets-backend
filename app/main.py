@@ -1,6 +1,7 @@
 from collections.abc import AsyncGenerator
 from fastapi import FastAPI
 from tortoise.contrib.fastapi import RegisterTortoise
+from tortoise import Tortoise
 from app.core.config import settings
 from app.api.main import api_router
 from app.api.routes.train import setup_cookies
@@ -17,6 +18,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         modules={"models": ["app.db_models"]},
         generate_schemas=True,
     )
+    await Tortoise.generate_schemas()
     await setup_cookies()
     # await load_stations()
 

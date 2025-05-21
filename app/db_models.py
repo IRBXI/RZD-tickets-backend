@@ -30,7 +30,6 @@ class User(BaseModel):
     updated_at = fields.DatetimeField
     active = fields.BooleanField
 
-
     class Meta:
         table = "users"
 

@@ -4,6 +4,9 @@ from app.services.validation import validate_traincode, validate_date, validate_
 from pydantic import BaseModel, AfterValidator, EmailStr, UUID4, ValidationInfo
 from pydantic.functional_validators import field_validator
 
+class SuccessfulResponse(BaseModel):
+    msg: str
+
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -29,6 +32,13 @@ class UserCreate(UserBase):
 class User(UserBase):
     id: Annotated[UUID4, AfterValidator(validate_user)]
 
+    class Config:
+        orm_mode = true
+
+    @field_validator("id", mode="after")
+    def convert_to_str(cls, value: str):
+        return str(value) if value else value
+
 
 class UserLogin(UserBase):
     email: EmailStr
@@ -48,6 +58,7 @@ class TokenPair(BaseModel):
 
 class RefreshToken(BaseModel):
     refresh: str
+
 
 class PathSegment(BaseModel):
     start_code: Annotated[str, AfterValidator(validate_traincode)] = "2000000"
