@@ -1,8 +1,16 @@
-from app.models import Stop, SeatsRequest, StationCode, TrainsRequest, Car, Train
+from app.models import (
+    Stop,
+    SeatsRequest,
+    StationCode,
+    TrainsRequest,
+    Car,
+    Train,
+    StationCode,
+)
 from app.util.url import build_url
 from app.util.functional import async_map
 from httpx import AsyncClient
-from .train_api import TrainAPI
+from .abstract_APIs import TrainAPI
 from .rzd_json_convertion import RzdJsonConverter
 from asyncio import sleep
 import time
@@ -33,6 +41,12 @@ class RZD_TrainAPI(TrainAPI):
         dir=0,
         seatDetails=1,
         bEntire="false",
+    )
+    _SUGGESTER_URL = build_url(
+        "https://pass.rzd.ru/suggester",
+        compactMode="y",
+        lat=1,
+        lang="ru",
     )
 
     def __new__(cls):
@@ -118,6 +132,12 @@ class RZD_TrainAPI(TrainAPI):
         res = await async_map(self._get_train_cars_with_seats, res)
         res = self._combine_cars_seats_info(res)
         return res
+
+    async def get_station_code(
+        self,
+        station_name: str,
+    ) -> StationCode:
+        return ""
 
     async def _get_train_cars_with_seats(
         self,

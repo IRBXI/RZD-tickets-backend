@@ -4,19 +4,14 @@ from app.models.models import (
     SeatsRequest,
     Car,
 )
-from app.services.train_api import TrainAPI
-from app.services.rzd_api import RZD_TrainAPI
+from app.services.abstract_APIs import TrainAPI
+from app.services.rzd_train_API import RZD_TrainAPI
 from fastapi import APIRouter, HTTPException
 from http import HTTPStatus
 
 router = APIRouter(tags=["train"])
 
-train_api: RZD_TrainAPI
-
-
-async def setup_api():
-    global train_api
-    train_api = await RZD_TrainAPI.create()
+train_api: TrainAPI = RZD_TrainAPI()
 
 
 @router.post("/trains/get_trains", response_model=list[Train])
