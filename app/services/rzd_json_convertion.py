@@ -1,6 +1,5 @@
 from datetime import datetime
 from app.models import Train, CarGroup, Stop, PathSegment, Car
-import json as js
 
 
 class RzdJsonConverter:
@@ -75,8 +74,6 @@ class RzdJsonConverter:
 
     @staticmethod
     def get_cars_from_json(json: dict) -> dict[int, Car]:
-        print(js.dumps(json, indent=4, ensure_ascii=False))
-
         json = json["lst"][0]
 
         if "result" in json and json["result"] == "FAIL":
