@@ -2,7 +2,7 @@ from collections.abc import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from tortoise.contrib.fastapi import RegisterTortoise
-from app.services.rzd_train_API import RZD_TrainAPI
+from app.services.rzd_APIs import RZD_TrainAPI, RZD_StationAPI
 from app.core.config import settings
 from app.api.main import api_router
 from contextlib import asynccontextmanager
@@ -19,8 +19,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     #     generate_schemas=True,
     # )
 
-    # Creating an instance of a singleton class which will be used by our routers
+    # Creating an instances of a singleton classes which will be used by our routers
     await RZD_TrainAPI.create()
+    await RZD_StationAPI.create()
 
     yield
 

@@ -4,8 +4,8 @@ from app.models.models import (
     SeatsRequest,
     Car,
 )
-from app.services.abstract_APIs import TrainAPI
-from app.services.rzd_train_API import RZD_TrainAPI
+from app.services.abstract_APIs import TrainAPI, APIUnavailableException
+from app.services.rzd_APIs import RZD_TrainAPI
 from fastapi import APIRouter, HTTPException
 from http import HTTPStatus
 
@@ -20,7 +20,7 @@ async def get_train(
 ):
     try:
         trains = await train_api.get_trains(request_data)
-    except TrainAPI.APIUnavailableException as e:
+    except APIUnavailableException as e:
         raise HTTPException(status_code=HTTPStatus.SERVICE_UNAVAILABLE, detail=str(e))
 
     return trains
@@ -32,7 +32,7 @@ async def get_seats(
 ):
     try:
         seats_info = await train_api.get_train_seats(request_data)
-    except TrainAPI.APIUnavailableException as e:
+    except APIUnavailableException as e:
         raise HTTPException(status_code=HTTPStatus.SERVICE_UNAVAILABLE, detail=str(e))
 
     return seats_info

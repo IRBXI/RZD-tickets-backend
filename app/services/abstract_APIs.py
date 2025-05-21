@@ -3,6 +3,10 @@ from app.models import StationCode
 from abc import ABC, abstractmethod
 
 
+class APIUnavailableException(Exception):
+    pass
+
+
 class TrainAPI(ABC):
     @abstractmethod
     async def get_trains(self, request_data: TrainsRequest) -> list[Train]:
@@ -12,12 +16,8 @@ class TrainAPI(ABC):
     async def get_train_seats(self, request_data: SeatsRequest) -> dict[int, Car]:
         pass
 
-    @abstractmethod
-    async def get_station_code(
-        self,
-        station_name: str,
-    ) -> StationCode:
-        pass
 
-    class APIUnavailableException(Exception):
+class StationAPI(ABC):
+    @abstractmethod
+    async def get_station_code(self, name: str) -> StationCode:
         pass

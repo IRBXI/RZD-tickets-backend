@@ -10,16 +10,18 @@ from app.models import (
 from app.util.url import build_url
 from app.util.functional import async_map
 from httpx import AsyncClient
-from .abstract_APIs import TrainAPI
+from .abstract_APIs import TrainAPI, StationAPI, APIUnavailableException
 from .rzd_json_convertion import RzdJsonConverter
 from asyncio import sleep
 import time
 from http import HTTPStatus
 
 
-# A singleton class to represent rzd train api
+# Singleton classes to represent rzd api
 # IMPORTANT!!! : should only be first created by the class create() method
 # using default constructor before ever calling create() method will cause an exception
+
+
 class RZD_TrainAPI(TrainAPI):
     _DEFAULT_URL = "https://pass.rzd.ru"
     _TIMETABLE_URL = "https://pass.rzd.ru/timetable/public/ru"
@@ -41,12 +43,6 @@ class RZD_TrainAPI(TrainAPI):
         dir=0,
         seatDetails=1,
         bEntire="false",
-    )
-    _SUGGESTER_URL = build_url(
-        "https://pass.rzd.ru/suggester",
-        compactMode="y",
-        lat=1,
-        lang="ru",
     )
 
     def __new__(cls):
@@ -75,7 +71,7 @@ class RZD_TrainAPI(TrainAPI):
         r = await self._client.post(url)
 
         if r.status_code != HTTPStatus.OK or r.json()["result"] == "FAIL":
-            raise TrainAPI.APIUnavailableException("Couldn't get the response from RZD")
+            raise APIUnavailableException("Couldn't get the response from RZD")
 
         rid = r.json()["RID"]
         url += f"&rid={rid}"
@@ -87,9 +83,7 @@ class RZD_TrainAPI(TrainAPI):
             await sleep(0.5)
 
         if r.json()["result"] == "RID":
-            raise TrainAPI.APIUnavailableException(
-                "RZD api unavailable, waited for 3 mins"
-            )
+            raise APIUnavailableException("RZD api unavailable, waited for 3 mins")
 
         return r.json()
 
@@ -106,7 +100,7 @@ class RZD_TrainAPI(TrainAPI):
 
         try:
             response_data = await self._rzd_post(url)
-        except TrainAPI.APIUnavailableException:
+        except APIUnavailableException:
             raise
 
         return RzdJsonConverter.get_trains_from_json(response_data)
@@ -123,7 +117,7 @@ class RZD_TrainAPI(TrainAPI):
 
         try:
             response_data = await self._rzd_post(url)
-        except TrainAPI.APIUnavailableException:
+        except APIUnavailableException:
             raise
 
         # json -> list[Stop] -> list[SeatsRequest] -> list[dict[int, Car]] -> dict[int, Car]
@@ -132,12 +126,6 @@ class RZD_TrainAPI(TrainAPI):
         res = await async_map(self._get_train_cars_with_seats, res)
         res = self._combine_cars_seats_info(res)
         return res
-
-    async def get_station_code(
-        self,
-        station_name: str,
-    ) -> StationCode:
-        return ""
 
     async def _get_train_cars_with_seats(
         self,
@@ -191,3 +179,50 @@ class RZD_TrainAPI(TrainAPI):
                         break
                     res[car_number].free_seats.get(seat, []).append(path_segments[0])
         return res
+
+
+class RZD_StationAPI(StationAPI):
+    _SUGGESTER_URL = build_url(
+        "https://pass.rzd.ru/suggester",
+        compactMode="y",
+        lat=1,
+        lang="ru",
+    )
+
+    def __new__(cls):
+        if not hasattr(cls, "instance"):
+            cls.instance = super(RZD_StationAPI, cls).__new__(cls)
+        return cls.instance
+
+    def __init__(self) -> None:
+        self._client = AsyncClient()
+
+    @classmethod
+    async def create(cls):
+        self = cls()
+        self.__init__()
+        await self._setup_cookies()
+        cls.instance = self
+        return self
+
+    async def _setup_cookies(self):
+        await self._client.get(RZD_TrainAPI._DEFAULT_URL)
+
+    async def get_station_code(self, name: str) -> StationCode:
+        name = name.upper()
+
+        url = build_url(
+            RZD_StationAPI._SUGGESTER_URL,
+            stationNamePart=name,
+        )
+
+        response_data = await self._client.get(url)
+
+        if response_data.status_code != HTTPStatus.OK:
+            raise APIUnavailableException("Couldn't get the response from RZD")
+
+        for station in response_data.json():
+            if station["n"] == name:
+                return str(station["c"])
+
+        return ""
