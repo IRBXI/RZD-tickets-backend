@@ -33,7 +33,7 @@ class User(UserBase):
     id: Annotated[UUID4, AfterValidator(validate_user)]
 
     class Config:
-        orm_mode = true
+        orm_mode = True
 
     @field_validator("id", mode="after")
     def convert_to_str(cls, value: str):

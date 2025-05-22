@@ -21,9 +21,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await Tortoise.generate_schemas()
     await setup_cookies()
     # await load_stations()
-
+    #
     yield
-
 
 app = FastAPI(openapi_url=f"{settings.API_V1_STR}/openapi.json", lifespan=lifespan)
 app.include_router(api_router, prefix=settings.API_V1_STR)
