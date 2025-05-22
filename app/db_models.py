@@ -11,7 +11,7 @@ def hash_password(password: str):
     return pwd_context.hash(password)
 
 
-class BaseModel(Model):
+class ModelBase(Model):
     id = fields.UUIDField(primary_key=True)
 
     class Meta:
@@ -22,7 +22,7 @@ class BaseModel(Model):
         return await cls.get_or_none(id=record_id)
 
 
-class User(BaseModel):
+class User(ModelBase):
     name = fields.CharField(max_length=255)
     email = fields.CharField(max_length=255, unique=True)
     password = fields.CharField(max_length=255)
@@ -45,7 +45,7 @@ class User(BaseModel):
         return user
 
 
-class BannedToken(BaseModel):
+class BannedToken(ModelBase):
     expired: fields.DatetimeField
     created_at: fields.DatetimeField
 

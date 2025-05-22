@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import APIRouter, Response
 from fastapi.exceptions import HTTPException
 from fastapi import status, Cookie, Depends
@@ -7,6 +8,8 @@ from typing import Any, Annotated
 from app import models, db_models
 from app.db_models import hash_password
 from app.core.jwt import create_token_pair, add_refresh_token_cookie, refresh_token_state, decode_access_token
+from app.core.jwt import JTI
+from app.core.jwt import EXP
 
 router = APIRouter(tags=["login"])
 
@@ -28,7 +31,7 @@ class BadRequestException(HTTPException):
 
 @router.post("/register", response_model=models.User)
 async def register_handler(
-    data: models.UserRegister,
+    data: models.UserRegister
 ):
     user = await db_models.User.find_by_email(email=data.email)
     if user:
@@ -36,10 +39,15 @@ async def register_handler(
 
     user_data = data.dict(exclude={"confirmed_password"})
     user_data["password"] = hash_password(user_data["password"])
+
     user = db_models.User(**user_data)
     user.active = True
-
     await user.save()
+
+    user_model = models.User.from_orm(user)
+
+    return user_model
+
 
 @router.post("/login")
 async def login(
@@ -75,8 +83,12 @@ async def refresh(refresh: Annotated[str | None, Cookie()] = None):
 async def logout(
     token: Annotated[str, Depends(oauth2_model)]
 ):
-    data = await decode_access_token(token=token, db=db)
+    data = await decode_access_token(token=token)
 
     #TODO: blacklist the token
+    banned_token = db_models.BannedToken(
+        id=data[JTI], expired=datetime.utcfromtimestamp(data[EXP])
+    )
+    await banned_token.save()
 
     return {"msg": "Succesfully logout"}
