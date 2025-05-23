@@ -1,10 +1,15 @@
+from dotenv import load_dotenv
+
+load_dotenv()
+
+from app.core.config import settings
+
 from collections.abc import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from tortoise.contrib.fastapi import RegisterTortoise
 from app.services.rzd_APIs import RZD_TrainAPI, RZD_StationAPI
 from app.repositories.tortoise_stations_repo import TortoiseStationsRepo
-from app.core.config import settings
 from app.api.main import api_router
 from contextlib import asynccontextmanager
 
@@ -24,6 +29,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     TortoiseStationsRepo()
 
     yield
+
 
 app = FastAPI(openapi_url=f"{settings.API_V1_STR}/openapi.json", lifespan=lifespan)
 app.include_router(api_router, prefix=settings.API_V1_STR)
