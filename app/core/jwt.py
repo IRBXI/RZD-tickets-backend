@@ -74,7 +74,7 @@ async def decode_access_token(
     token: str
 ):
     try:
-        data = jwt.decode(token, config.AuthSettings.SECRET_KEY, algorithms=[config.AuthSettings.ALGORITHM])
+        data = jwt.decode(token, config.authSettings.SECRET_KEY, algorithms=[config.authSettings.ALGORITHM])
         banned_token = await BannedToken.get_by_id(data[JTI])
         if banned_token:
             raise JWTError("This token is banned")
@@ -89,7 +89,7 @@ def refresh_token_state(
     token: str
 ):
     try:
-        data = jwt.decode(token, config.AuthSettings.SECRET_KEY, algorithms=[config.AuthSettings.ALGORITHM])
+        data = jwt.decode(token, config.authSettings.SECRET_KEY, algorithms=[config.authSettings.ALGORITHM])
     except JWTError as e:
         print(str(e))
         raise AuthFailedException()
