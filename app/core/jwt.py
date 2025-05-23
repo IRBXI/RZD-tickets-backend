@@ -3,6 +3,7 @@ from datetime import timedelta, datetime, timezone
 from jose import jwt, JWTError
 from fastapi import Response, status, HTTPException
 
+from app.models import db_models
 from app.models.db_models import BannedToken
 from . import config
 

@@ -14,7 +14,6 @@ from typing import Any, Annotated
 from app.models import models, db_models
 from app.models.db_models import hash_password
 from app.core.jwt import create_token_pair, add_refresh_token_cookie, refresh_token_state, decode_access_token
-from curses.ascii import US
 from app.core.jwt import JTI
 from app.core.jwt import EXP
 
@@ -29,12 +28,21 @@ class ForbiddenException(HTTPException):
             detail=detail if detail else "Forbidden",
         )
 
+
 class BadRequestException(HTTPException):
     def __init__(self, detail: Any = None) -> None:
         super().__init__(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=detail if detail else "Bad request"
         )
+
+class NonExistentException(HTTPException):
+    def __init__(self, detail: Any = None) -> None:
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=detail if detail else "Not found"
+        )
+
 
 @router.post("/register", response_model=models.User)
 async def register(
@@ -84,7 +92,7 @@ async def refresh(refresh: Annotated[str | None, Cookie()] = None):
     return refresh_token_state(token=refresh)
 
 @router.get("/user/{id}", response_model=models.User)
-async def get_user(id: str):
+async def get_user(token: Annotated[str, Depends(oauth2_model)]):
     try:
         user = await db_models.User.get(name=id)
 
@@ -98,9 +106,7 @@ async def get_user(id: str):
 async def logout(
     token: Annotated[str, Depends(oauth2_model)]
 ):
-    print(token)
     data = await decode_access_token(token=token)
-    print(data[JTI])
 
     banned_token = db_models.BannedToken(
         id=data[JTI], expired=datetime.utcfromtimestamp(data[EXP])
