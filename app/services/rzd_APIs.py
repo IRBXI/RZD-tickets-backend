@@ -107,7 +107,7 @@ class RZD_TrainAPI(TrainAPI):
         except APIUnavailableException:
             raise
 
-        return RzdJsonConverter.get_trains_from_json(response_data)
+        return RzdJsonConverter.get_trains_from_json(response_data)  # type: ignore
 
     async def get_train_seats(
         self,
@@ -129,7 +129,7 @@ class RZD_TrainAPI(TrainAPI):
         res = self._stops_to_seats_requests(request_data.train_number, res)
         res = await async_map(self._get_train_cars_with_seats, res)
         res = self._combine_cars_seats_info(res)
-        return res
+        return res  # type: ignore
 
     async def _get_train_cars_with_seats(
         self,
@@ -181,7 +181,9 @@ class RZD_TrainAPI(TrainAPI):
                     if car_number not in res:
                         res[car_number] = car
                         break
-                    res[car_number].free_seats.get(seat, []).append(path_segments[0])
+                    if seat not in res[car_number].free_seats:
+                        res[car_number].free_seats[seat] = []
+                    res[car_number].free_seats[seat].append(path_segments[0])
         return res
 
 

@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException
-from app.models.db_models import Station
 from app.services.abstract_APIs import StationAPI, APIUnavailableException
 from app.services.rzd_APIs import RZD_StationAPI
 from app.repositories.abstract_repos import StationsRepo
