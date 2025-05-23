@@ -80,11 +80,11 @@ class RZD_TrainAPI(TrainAPI):
         rid = r.json()["RID"]
         url += f"&rid={rid}"
 
-        timeout = time.time() + 60 * 3
+        timeout = time.time() + 60
 
         while r.json()["result"] != "OK" and time.time() < timeout:
             r = await self._client.post(url)
-            await sleep(0.5)
+            await sleep(1)
 
         if r.json()["result"] != "OK":
             raise APIUnavailableException("RZD api unavailable, waited for 3 mins")
@@ -223,6 +223,12 @@ class RZD_StationAPI(StationAPI):
         )
 
         response_data = await self._client.get(url)
+
+        timeout = time.time() + 60
+
+        while response_data.status_code != HTTPStatus.OK and time.time() < timeout:
+            response_data = await self._client.get(url)
+            await sleep(1)
 
         if response_data.status_code != HTTPStatus.OK:
             raise APIUnavailableException("Couldn't get the response from RZD")
