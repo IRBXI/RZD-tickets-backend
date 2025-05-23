@@ -42,7 +42,7 @@ class BadRequestException(HTTPException):
 
 
 @router.post("/register", response_model=models.User)
-async def register_handler(data: models.UserRegister):
+async def register(data: models.UserRegister):
     user = await db_models.User.find_by_email(email=data.email)
     if user:
         raise HTTPException(
