@@ -91,8 +91,10 @@ def refresh_token_state(
     try:
         data = jwt.decode(token, config.authSettings.SECRET_KEY, algorithms=[config.authSettings.ALGORITHM])
     except JWTError as e:
-        print(str(e))
+        print("ERROR: ", str(e))
         raise AuthFailedException()
+
+    print(data[JTI])
 
     return {"token": _create_access_token(data=data).token}
 
