@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Annotated
 from pydantic import BaseModel, AfterValidator, EmailStr, UUID4, ValidationInfo
 from pydantic.functional_validators import field_validator
+from pydantic_core.core_schema import field_wrap_validator_function
 from starlette.exceptions import HTTPException
 from fastapi import status
 from tortoise.filters import json_encoder
@@ -59,6 +60,7 @@ class User(UserBase):
     @field_validator("id", mode="after")
     def convert_to_str(cls, value: str):
         return str(value) if value else value
+
 
 class UserLogin(UserBase):
     email: EmailStr
