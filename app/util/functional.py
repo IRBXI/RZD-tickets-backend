@@ -1,2 +1,2 @@
 async def async_map(func, iterable):
-    return [await func(x) for x in iterable]
+    return [await func(x) async for x in iterable]

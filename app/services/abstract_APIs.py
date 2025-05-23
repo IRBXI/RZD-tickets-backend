@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Awaitable
 from app.models import TrainsRequest, SeatsRequest, Train, Car
-from app.models import StationCode
 
 
 class APIUnavailableException(Exception):
