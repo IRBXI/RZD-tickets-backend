@@ -5,16 +5,20 @@ from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
 def verify_password(plain: str, hashed: str):
     return pwd_context.verify(plain, hashed)
 
+
 def hash_password(password: str):
     return pwd_context.hash(password)
+
 
 class Station(Model):
     # All stations use 7 character long ids
     id = fields.CharField(primary_key=True, max_length=7)
     # TODO: Maybe research all the posible station names to cut down on the max_length
+
 
 class ModelBase(Model):
     id = fields.UUIDField(primary_key=True)

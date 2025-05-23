@@ -12,6 +12,7 @@ from .validation import (
 
 StationCode = Annotated[str, AfterValidator(validate_station_code)]
 
+
 class SuccessfulResponse(BaseModel):
     msg: str
 
@@ -46,6 +47,7 @@ class User(UserBase):
     @field_validator("id", mode="after")
     def convert_to_str(cls, value: str):
         return str(value) if value else value
+
 
 class UserLogin(UserBase):
     email: EmailStr
