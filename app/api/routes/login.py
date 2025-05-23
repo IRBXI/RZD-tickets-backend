@@ -1,3 +1,4 @@
+from uuid import uuid4
 from fastapi import APIRouter
 
 router = APIRouter(tags=["login"])
@@ -5,60 +6,36 @@ router = APIRouter(tags=["login"])
 from datetime import datetime
 from fastapi import APIRouter, Response
 from fastapi.exceptions import HTTPException
-from fastapi import status, Cookie, Depends
-from fastapi.security import OAuth2PasswordBearer
-from typing import Any, Annotated
+from fastapi import Cookie, Depends
+from tortoise.exceptions import DoesNotExist
+from typing_extensions import Annotated
 
 from app.models import models, db_models
 from app.models.db_models import hash_password
-from app.core.jwt import (
-    create_token_pair,
-    add_refresh_token_cookie,
-    refresh_token_state,
-    decode_access_token,
-)
-from app.core.jwt import JTI
-from app.core.jwt import EXP
+from app.core.users import get_current_active_user, oauth2_model
+from app.core.jwt import create_token_pair, add_refresh_token_cookie, refresh_token_state, decode_access_token
+from app.core.jwt import JTI, SUB, EXP
+from app.core.exceptions import BadRequestException, ForbiddenException
 
 router = APIRouter(tags=["login"])
 
-oauth2_model = OAuth2PasswordBearer(tokenUrl="token")
-
-
-class ForbiddenException(HTTPException):
-    def __init__(self, detail: Any = None) -> None:
-        super().__init__(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=detail if detail else "Forbidden",
-        )
-
-
-class BadRequestException(HTTPException):
-    def __init__(self, detail: Any = None) -> None:
-        super().__init__(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=detail if detail else "Bad request",
-        )
 
 
 @router.post("/register", response_model=models.User)
-async def register(data: models.UserRegister):
-    user = await db_models.User.find_by_email(email=data.email)
-    if user:
-        raise HTTPException(
-            status_code=400, detail="User already exists... Try anotha email vro..."
-        )
+async def register(
+    data: models.UserRegister
+):
+    if await db_models.User.filter(email=data.email):
+        raise HTTPException(status_code=400, detail="User already exists")
 
-    user_data = data.dict(exclude={"confirmed_password"})
-    user_data["password"] = hash_password(user_data["password"])
+    user = await db_models.User.create(
+        email=data.email,
+        password=hash_password(data.password),
+        name=data.name,
+        active=True
+    )
 
-    user = db_models.User(**user_data)
-    user.active = True
-    await user.save()
-
-    user_model = models.User.from_orm(user)
-
-    return user_model
+    return models.User.from_orm(user)
 
 
 @router.post("/login")
@@ -81,17 +58,23 @@ async def login(data: models.UserLogin, response: Response):
 
 @router.post("/refresh")
 async def refresh(refresh: Annotated[str | None, Cookie()] = None):
-    print(refresh)
     if not refresh:
-        raise BadRequestException(detail="refresh token required")
+        raise BadRequestException(detail="Refresh token required")
     return refresh_token_state(token=refresh)
+
+
+@router.get("/user/{id}", response_model=models.User)
+async def get_user(user: Annotated[models.User, Depends(get_current_active_user)]):
+    try:
+        return user
+    except DoesNotExist:
+        raise BadRequestException
 
 
 @router.post("/logout", response_model=models.SuccessfulResponse)
 async def logout(token: Annotated[str, Depends(oauth2_model)]):
     data = await decode_access_token(token=token)
 
-    # TODO: blacklist the token
     banned_token = db_models.BannedToken(
         id=data[JTI], expired=datetime.utcfromtimestamp(data[EXP])
     )

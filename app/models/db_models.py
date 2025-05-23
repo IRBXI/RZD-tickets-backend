@@ -33,7 +33,7 @@ class ModelBase(Model):
 
 
 class User(ModelBase):
-    name = fields.CharField(max_length=255)
+    name = fields.CharField(max_length=255, unique=True)
     email = fields.CharField(max_length=255, unique=True)
     password = fields.CharField(max_length=255)
     created_at = fields.DatetimeField
@@ -42,6 +42,10 @@ class User(ModelBase):
 
     class Meta:
         table = "users"
+
+    @classmethod
+    async def find_by_username(cls, name: str):
+        return await cls.get_or_none(name=name)
 
     @classmethod
     async def find_by_email(cls, email: str):

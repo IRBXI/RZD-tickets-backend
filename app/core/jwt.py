@@ -3,21 +3,13 @@ from datetime import timedelta, datetime, timezone
 from jose import jwt, JWTError
 from fastapi import Response, status, HTTPException
 
+from app.models import db_models
 from app.models.db_models import BannedToken
+from app.core.exceptions import AuthFailedException
 from . import config
 
 from app.models.models import User, JwtTokenSchema, TokenPair
 from uuid import uuid4
-
-
-class AuthFailedException(HTTPException):
-    def __init__(self) -> None:
-        super().__init__(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authenticate failed",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
 
 REFRESH_COOKIE_NAME = "refresh"
 SUB = "sub"
@@ -90,7 +82,6 @@ async def decode_access_token(token: str):
         if banned_token:
             raise JWTError("This token is banned")
     except JWTError:
-        print("fuck")
         raise AuthFailedException()
 
     return data
@@ -104,8 +95,10 @@ def refresh_token_state(token: str):
             algorithms=[config.AuthSettings.ALGORITHM],
         )
     except JWTError as e:
-        print(str(e))
+        print("ERROR: ", str(e))
         raise AuthFailedException()
+
+    print(data[JTI])
 
     return {"token": _create_access_token(data=data).token}
 
