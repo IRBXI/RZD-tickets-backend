@@ -1,26 +1,27 @@
-from socket import fromfd
-from re import I
+from pydantic import ValidationError
 from typing_extensions import Annotated
-from app.api.routes.login import oauth2_model, NonExistentException, BadRequestException
-from app.core.jwt import JTI, decode_access_token
+from app.core.jwt import JTI, decode_access_token, JWTError
+from app.core.exceptions import NonExistentException, BadRequestException, AuthFailedException
 from fastapi import Depends
+from fastapi.security import OAuth2PasswordBearer
 
 from app.models import db_models, models
+from app.core.jwt import SUB
 
 
-async def _get_current_user(token: Annotated[str, Depends(oauth2_model)]):
-    data = await decode_access_token(token=token)
-    user = db_models.User.get_or_none(id=data[JTI])
-    if not user:
-        raise NonExistentException
-
-    return user
+oauth2_model = OAuth2PasswordBearer(tokenUrl="login")
 
 
 async def get_current_active_user(token: Annotated[str, Depends(oauth2_model)]):
-    user = await _get_current_user(token=token)
+    try:
+        data = await decode_access_token(token=token)
+        if not (user_id := data[SUB]):
+            raise AuthFailedException("Invalid token format")
 
-    if not user.active:
-        raise BadRequestException("User is inactive")
+        if not (user := await db_models.User.get_or_none(id=user_id)):
+            raise AuthFailedException("User not found")
 
-    return models.User.from_orm(user)
+        return models.User.model_validate(user)
+
+    except JWTError:
+        AuthFailedException("Invalid token")

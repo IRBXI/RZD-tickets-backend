@@ -4,6 +4,7 @@ from pydantic import BaseModel, AfterValidator, EmailStr, UUID4, ValidationInfo
 from pydantic.functional_validators import field_validator
 from starlette.exceptions import HTTPException
 from fastapi import status
+from tortoise.filters import json_encoder
 from .validation import (
     validate_station_code,
     validate_date,

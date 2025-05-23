@@ -5,18 +5,11 @@ from fastapi import Response, status, HTTPException
 
 from app.models import db_models
 from app.models.db_models import BannedToken
+from app.core.exceptions import AuthFailedException
 from . import config
 
 from app.models.models import User, JwtTokenSchema, TokenPair
 from uuid import uuid4
-
-class AuthFailedException(HTTPException):
-    def __init__(self) -> None:
-        super().__init__(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authenticate failed",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
 
 REFRESH_COOKIE_NAME = "refresh"
 SUB = "sub"
@@ -80,7 +73,6 @@ async def decode_access_token(
         if banned_token:
             raise JWTError("This token is banned")
     except JWTError:
-        print("fuck")
         raise AuthFailedException()
 
     return data
