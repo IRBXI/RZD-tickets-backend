@@ -1,4 +1,4 @@
-from typing import Awaitable
+from typing import Awaitable, Iterable
 from app.models import (
     Stop,
     SeatsRequest,
@@ -8,8 +8,9 @@ from app.models import (
     Train,
     StationCode,
 )
+from asyncio import gather
 from app.util.url import build_url
-from app.util.functional import async_map
+from app.util.async_helpers import offset_coroutine
 from httpx import AsyncClient
 from .abstract_APIs import TrainAPI, StationAPI, APIUnavailableException
 from .rzd_json_convertion import RzdJsonConverter
@@ -87,7 +88,7 @@ class RZD_TrainAPI(TrainAPI):
             await sleep(1)
 
         if r.json()["result"] != "OK":
-            raise APIUnavailableException("RZD api unavailable, waited for 3 mins")
+            raise APIUnavailableException("RZD api unavailable, waited for 1 mins")
 
         return r.json()
 
@@ -127,7 +128,11 @@ class RZD_TrainAPI(TrainAPI):
         # json -> list[Stop] -> list[SeatsRequest] -> list[dict[int, Car]] -> dict[int, Car]
         res = RzdJsonConverter.get_stops_from_json(response_data)
         res = self._stops_to_seats_requests(request_data.train_number, res)
-        res = await async_map(self._get_train_cars_with_seats, res)
+        coroutines = [
+            offset_coroutine(self._get_train_cars_with_seats(x), i * 0.3)
+            for i, x in enumerate(res)
+        ]
+        res = await gather(*coroutines)
         res = self._combine_cars_seats_info(res)
         return res  # type: ignore
 
@@ -172,7 +177,7 @@ class RZD_TrainAPI(TrainAPI):
 
     @staticmethod
     def _combine_cars_seats_info(
-        cars_for_segment: list[dict[int, Car]],
+        cars_for_segment: Iterable[dict[int, Car]],
     ) -> dict[int, Car]:
         res: dict[int, Car] = {}
         for cars in cars_for_segment:
