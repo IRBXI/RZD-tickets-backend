@@ -37,7 +37,6 @@ class User(ModelBase):
     email = fields.CharField(max_length=255, unique=True)
     password = fields.CharField(max_length=255)
     created_at = fields.DatetimeField
-    updated_at = fields.DatetimeField
     active = fields.BooleanField
 
     class Meta:
