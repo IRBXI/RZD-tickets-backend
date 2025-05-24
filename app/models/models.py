@@ -2,6 +2,10 @@ from datetime import datetime
 from typing import Annotated
 from pydantic import BaseModel, AfterValidator, EmailStr, UUID4, ValidationInfo
 from pydantic.functional_validators import field_validator
+from pydantic_core.core_schema import field_wrap_validator_function
+from starlette.exceptions import HTTPException
+from fastapi import status
+from tortoise.filters import json_encoder
 from .validation import (
     validate_station_code,
     validate_date,
@@ -9,6 +13,13 @@ from .validation import (
     validate_user,
 )
 
+
+class CorruptedPasswordException(HTTPException):
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Corrupted password"
+        )
 
 StationCode = Annotated[str, AfterValidator(validate_station_code)]
 
@@ -29,9 +40,12 @@ class UserRegister(UserBase):
     @field_validator("confirmed_password", mode="after")
     @classmethod
     def check_matching_passwords(cls, value: str, info: ValidationInfo):
-        if value != info.data["password"]:
-            raise ValueError("Passwords do not math")
-        return value
+        try:
+            if value != info.data["password"]:
+                raise ValueError("Passwords do not math")
+            return value
+        except ValueError:
+            raise CorruptedPasswordException
 
 
 class UserCreate(UserBase):
