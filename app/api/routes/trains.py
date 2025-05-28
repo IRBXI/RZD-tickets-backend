@@ -1,25 +1,26 @@
+from typing import Annotated
 from app.models.models import (
     Train,
     TrainsRequest,
     SeatsRequest,
     Car,
 )
-from app.services.abstract_APIs import TrainAPI, APIUnavailableException
-from app.services.rzd_APIs import RZD_TrainAPI
-from fastapi import APIRouter, HTTPException
+from app.services.abstract_services import TrainService
+from app.core.exceptions import APIUnavailableException
+from app.services import get_train_service
+from fastapi import APIRouter, HTTPException, Depends
 from http import HTTPStatus
 
 router = APIRouter(tags=["train"])
 
-train_api: TrainAPI = RZD_TrainAPI()
-
 
 @router.post("/trains/get_trains", response_model=list[Train])
 async def get_train(
+    train_service: Annotated[TrainService, Depends(get_train_service)],
     request_data: TrainsRequest,
 ):
     try:
-        trains = await train_api.get_trains(request_data)
+        trains = await train_service.get_trains(request_data)
     except APIUnavailableException as e:
         raise HTTPException(status_code=HTTPStatus.SERVICE_UNAVAILABLE, detail=str(e))
 
@@ -28,10 +29,11 @@ async def get_train(
 
 @router.post("/trains/get_seats", response_model=dict[int, Car])
 async def get_seats(
+    train_service: Annotated[TrainService, Depends(get_train_service)],
     request_data: SeatsRequest,
 ):
     try:
-        seats_info = await train_api.get_train_seats(request_data)
+        seats_info = await train_service.get_train_seats(request_data)
     except APIUnavailableException as e:
         raise HTTPException(status_code=HTTPStatus.SERVICE_UNAVAILABLE, detail=str(e))
 
