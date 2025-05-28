@@ -1,10 +1,18 @@
+import os
+
+# weird thing which is needed for tests to work properly
+os.environ["SECRET_KEY"] = ""
+os.environ["ALGORITHM"] = ""
+os.environ["ACCESS_TOKEN_EXPIRES_MINUTES"] = "0"
+os.environ["REFRESH_TOKEN_EXPIRES_MINUTES"] = "0"
+
 from app.models import Stop, SeatsRequest, PathSegment, Car
-from app.services.rzd_APIs import RZD_TrainAPI
+from app.services.rzd_services.train_service import RzdTrainService
 
 
 class TestStopsToSeatsRequests:
     def test_empty_stops_returns_empty_list(self):
-        assert RZD_TrainAPI._stops_to_seats_requests("123", []) == []
+        assert RzdTrainService._stops_to_seats_requests("123", []) == []
 
     def test_two_stops(self):
         stops = [
@@ -23,7 +31,7 @@ class TestStopsToSeatsRequests:
                 departure_time="11:05",
             ),
         ]
-        requests: list[SeatsRequest] = RZD_TrainAPI._stops_to_seats_requests(
+        requests: list[SeatsRequest] = RzdTrainService._stops_to_seats_requests(
             "123", stops
         )
 
@@ -60,7 +68,7 @@ class TestStopsToSeatsRequests:
                 departure_time=None,
             ),
         ]
-        requests = RZD_TrainAPI._stops_to_seats_requests("456", stops)
+        requests = RzdTrainService._stops_to_seats_requests("456", stops)
 
         assert len(requests) == 2
         # First request (A -> B)
@@ -86,7 +94,7 @@ class TestStopsToSeatsRequests:
                 departure_time="10:00",
             ),
         ]
-        assert RZD_TrainAPI._stops_to_seats_requests("123", stops) == []
+        assert RzdTrainService._stops_to_seats_requests("123", stops) == []
 
     def test_uses_previous_stops_date(self):
         stops = [
@@ -112,7 +120,7 @@ class TestStopsToSeatsRequests:
                 departure_time=None,
             ),
         ]
-        requests = RZD_TrainAPI._stops_to_seats_requests("123", stops)
+        requests = RzdTrainService._stops_to_seats_requests("123", stops)
 
         assert requests[0].train_request.date == "01.01.2025"  # Uses first stop's date
         assert requests[1].train_request.date == "02.01.2025"  # Uses second stop's date
@@ -121,7 +129,7 @@ class TestStopsToSeatsRequests:
 class TestCombineCarsSeatsInfo:
     def test_empty_input(self):
         cars_for_segment = []
-        result = RZD_TrainAPI._combine_cars_seats_info(cars_for_segment)
+        result = RzdTrainService._combine_cars_seats_info(cars_for_segment)
         assert result == {}
 
     def test_single_car_single_seat(self):
@@ -133,7 +141,7 @@ class TestCombineCarsSeatsInfo:
         )
         car = Car(car_number=1, car_type="TypeA", free_seats={"001": [seg1]})
         cars_for_segment = [{1: car}]
-        result = RZD_TrainAPI._combine_cars_seats_info(cars_for_segment)
+        result = RzdTrainService._combine_cars_seats_info(cars_for_segment)
         assert result == {1: car}
 
     def test_multiple_segments_for_one_seat(self):
@@ -152,7 +160,7 @@ class TestCombineCarsSeatsInfo:
         car1 = Car(car_number=1, car_type="TypeA", free_seats={"001": [seg1]})
         car2 = Car(car_number=1, car_type="TypeA", free_seats={"001": [seg2]})
         cars_for_segment = [{1: car1}, {1: car2}]
-        result = RZD_TrainAPI._combine_cars_seats_info(cars_for_segment)
+        result = RzdTrainService._combine_cars_seats_info(cars_for_segment)
         assert result == {
             1: Car(car_number=1, car_type="TypeA", free_seats={"001": [seg1, seg2]})
         }
@@ -173,7 +181,7 @@ class TestCombineCarsSeatsInfo:
         car1 = Car(car_number=1, car_type="TypeA", free_seats={"001": [seg1]})
         car2 = Car(car_number=1, car_type="TypeA", free_seats={"002": [seg2]})
         cars_for_segment = [{1: car1}, {1: car2}]
-        result = RZD_TrainAPI._combine_cars_seats_info(cars_for_segment)
+        result = RzdTrainService._combine_cars_seats_info(cars_for_segment)
         expected_car = Car(
             car_number=1, car_type="TypeA", free_seats={"001": [seg1], "002": [seg2]}
         )
