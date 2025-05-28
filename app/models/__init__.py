@@ -7,4 +7,10 @@ from .models import (
     CarGroup,
     Car,
     PathSegment,
+    User,
+    JwtTokenSchema,
+    TokenPair,
+    SuccessfulResponse,
+    UserLogin,
+    UserRegister,
 )

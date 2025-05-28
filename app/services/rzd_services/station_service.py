@@ -1,23 +1,23 @@
 from app.util.url import build_url
 from httpx import AsyncClient
 from app.core.exceptions import APIUnavailableException, NoStationException
-from app.services.abstract_services import StationService
+from app.services.abstract_services import AbstractStationService
 from app.repositories import get_station_repo
 from app.models.db_models import Station
 from asyncio import sleep
 import time
 from http import HTTPStatus
 
+DEFAULT_URL: str = "https://pass.rzd.ru"
+SUGGESTER_URL: str = build_url(
+    "https://pass.rzd.ru/suggester",
+    compactMode="y",
+    lat=1,
+    lang="ru",
+)
 
-class RzdStationService(StationService):
-    _DEFAULT_URL = "https://pass.rzd.ru"
-    _SUGGESTER_URL = build_url(
-        "https://pass.rzd.ru/suggester",
-        compactMode="y",
-        lat=1,
-        lang="ru",
-    )
 
+class RzdStationService(AbstractStationService):
     def __new__(cls):
         if not hasattr(cls, "instance"):
             cls.instance = super(RzdStationService, cls).__new__(cls)
@@ -38,13 +38,13 @@ class RzdStationService(StationService):
         return self
 
     async def _setup_cookies(self):
-        await self._client.get(RzdStationService._DEFAULT_URL)
+        await self._client.get(DEFAULT_URL)
 
     async def get_station_code(self, name: str) -> str:
         name = name.upper()
 
         url = build_url(
-            RzdStationService._SUGGESTER_URL,
+            SUGGESTER_URL,
             stationNamePart=name,
         )
 

@@ -1,4 +1,4 @@
-from typing import Awaitable, Iterable
+from typing import Iterable
 from app.models import (
     Stop,
     SeatsRequest,
@@ -12,7 +12,7 @@ from asyncio import gather
 from app.util.url import build_url
 from app.util.async_helpers import offset_coroutine
 from httpx import AsyncClient
-from app.services.abstract_services import TrainService
+from app.services.abstract_services import AbstractTrainService
 from app.core.exceptions import APIUnavailableException
 from .json_convertion import RzdJsonConverter
 from asyncio import sleep
@@ -20,32 +20,33 @@ import time
 from http import HTTPStatus
 
 
+DEFAULT_URL: str = "https://pass.rzd.ru"
+TIMETABLE_URL: str = "https://pass.rzd.ru/timetable/public/ru"
+GET_TRAINS_URL: str = build_url(
+    TIMETABLE_URL,
+    layer_id=5827,
+    dir=0,
+    tfl=3,
+    checkSeats=1,
+    md=0,
+)
+STATIONS_URL: str = build_url(
+    "https://pass.rzd.ru/ticket/services/route/basicRoute",
+    STRUCTURE_ID=5418,
+)
+GET_SEATS_URL: str = build_url(
+    TIMETABLE_URL,
+    layer_id=5764,
+    dir=0,
+    seatDetails=1,
+    bEntire="false",
+)
+
+
 # Singleton class to represent rzd api
 # IMPORTANT!!! : should only be first created by the class create() method
 # using default constructor before ever calling create() method will cause an exception
-class RzdTrainService(TrainService):
-    _DEFAULT_URL = "https://pass.rzd.ru"
-    _TIMETABLE_URL = "https://pass.rzd.ru/timetable/public/ru"
-    _GET_TRAINS_URL = build_url(
-        _TIMETABLE_URL,
-        layer_id=5827,
-        dir=0,
-        tfl=3,
-        checkSeats=1,
-        md=0,
-    )
-    _STATIONS_URL = build_url(
-        "https://pass.rzd.ru/ticket/services/route/basicRoute",
-        STRUCTURE_ID=5418,
-    )
-    _GET_SEATS_URL = build_url(
-        _TIMETABLE_URL,
-        layer_id=5764,
-        dir=0,
-        seatDetails=1,
-        bEntire="false",
-    )
-
+class RzdTrainService(AbstractTrainService):
     def __new__(cls):
         if not hasattr(cls, "instance"):
             cls.instance = super(RzdTrainService, cls).__new__(cls)
@@ -65,7 +66,7 @@ class RzdTrainService(TrainService):
         return self
 
     async def _setup_cookies(self):
-        await self._client.get(RzdTrainService._DEFAULT_URL)
+        await self._client.get(DEFAULT_URL)
 
     async def _rzd_post(
         self,
@@ -113,7 +114,7 @@ class RzdTrainService(TrainService):
         request_data: TrainsRequest,
     ) -> list[Train]:
         url = build_url(
-            RzdTrainService._GET_TRAINS_URL,
+            GET_TRAINS_URL,
             code0=request_data.from_code,
             code1=request_data.to_code,
             dt0=request_data.date,
@@ -131,7 +132,7 @@ class RzdTrainService(TrainService):
         request_data: SeatsRequest,
     ) -> dict[int, Car]:
         url = build_url(
-            RzdTrainService._STATIONS_URL,
+            STATIONS_URL,
             trainNumber=request_data.train_number,
             depDate=request_data.train_request.date,
         )
@@ -157,7 +158,7 @@ class RzdTrainService(TrainService):
         request_data: SeatsRequest,
     ) -> dict[int, Car]:
         url = build_url(
-            RzdTrainService._GET_SEATS_URL,
+            GET_SEATS_URL,
             tnum0=request_data.train_number,
             dt0=request_data.train_request.date,
             time0=request_data.departure_time,

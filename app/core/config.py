@@ -1,4 +1,7 @@
+from collections.abc import Callable
 from pydantic_settings import BaseSettings
+
+from fastapi.security import OAuth2PasswordBearer
 
 
 class Settings(BaseSettings):
@@ -14,7 +17,8 @@ class AuthSettings(BaseSettings):
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRES_MINUTES: int
     REFRESH_TOKEN_EXPIRES_MINUTES: int
+    OAUTH2_MODEL: Callable = OAuth2PasswordBearer(tokenUrl="login")
 
 
 settings = Settings()
-authSettings = AuthSettings()
+auth_settings = AuthSettings()

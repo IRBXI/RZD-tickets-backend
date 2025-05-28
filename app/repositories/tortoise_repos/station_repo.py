@@ -1,9 +1,9 @@
 from app.models.db_models import Station
-from .abstract_repos import StationRepo
+from app.repositories.abstract_repos import AbstractStationRepo
 from app.core.exceptions import NoStationException
 
 
-class TortoiseStationRepo(StationRepo):
+class TortoiseStationRepo(AbstractStationRepo):
     # Singleton
     def __new__(cls):
         if not hasattr(cls, "instance"):

@@ -1,17 +1,5 @@
 from tortoise.models import Model
 from tortoise import fields
-from passlib.context import CryptContext
-
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-def verify_password(plain: str, hashed: str):
-    return pwd_context.verify(plain, hashed)
-
-
-def hash_password(password: str):
-    return pwd_context.hash(password)
 
 
 class Station(Model):
@@ -33,29 +21,14 @@ class ModelBase(Model):
 
 
 class User(ModelBase):
-    name = fields.CharField(max_length=255, unique=True)
+    name = fields.CharField(max_length=255)
     email = fields.CharField(max_length=255, unique=True)
     password = fields.CharField(max_length=255)
-    created_at = fields.DatetimeField
-    active = fields.BooleanField
+    created_at = fields.DatetimeField(auto_now_add=True)
+    active = fields.BooleanField()
 
     class Meta:
         table = "users"
-
-    @classmethod
-    async def find_by_username(cls, name: str):
-        return await cls.get_or_none(name=name)
-
-    @classmethod
-    async def find_by_email(cls, email: str):
-        return await cls.get_or_none(email=email)
-
-    @classmethod
-    async def authorize(cls, email: str, password: str):
-        user = await cls.find_by_email(email)
-        if not user or not verify_password(password, user.password):
-            return False
-        return user
 
 
 class BannedToken(ModelBase):

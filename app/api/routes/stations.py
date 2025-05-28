@@ -1,7 +1,7 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from app.core.exceptions import APIUnavailableException, NoStationException
-from app.services import StationService, get_station_service
+from app.services import AbstractStationService, get_station_service
 
 from app.models import StationCode
 from http import HTTPStatus
@@ -11,8 +11,8 @@ router = APIRouter(tags=["stations"])
 
 @router.get("/stations", response_model=StationCode)
 async def get_station_code(
-    station_service: Annotated[StationService, Depends(get_station_service)],
     name: str,
+    station_service: Annotated[AbstractStationService, Depends(get_station_service)],
 ):
     try:
         station = await station_service.get_station_by_name(name)

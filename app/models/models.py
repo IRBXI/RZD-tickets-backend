@@ -17,9 +17,9 @@ from .validation import (
 class CorruptedPasswordException(HTTPException):
     def __init__(self) -> None:
         super().__init__(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Corrupted password"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Corrupted password"
         )
+
 
 StationCode = Annotated[str, AfterValidator(validate_station_code)]
 
@@ -54,9 +54,7 @@ class UserCreate(UserBase):
 
 class User(UserBase):
     id: Annotated[UUID4, AfterValidator(validate_user)]
-
-    class Config:
-        from_attributes = True
+    active: bool = True
 
     @field_validator("id", mode="after")
     def convert_to_str(cls, value: str):
