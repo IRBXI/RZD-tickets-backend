@@ -79,10 +79,6 @@ class TokenPair(BaseModel):
     refresh: JwtTokenSchema
 
 
-class RefreshToken(BaseModel):
-    refresh: str
-
-
 class PathSegment(BaseModel):
     start_station_name: str
     end_station_name: str
