@@ -1,1 +1,1 @@
-[!alt text]https://soggy.cat/img/soggycat.jpg
+![alt text]https://soggy.cat/img/soggycat.jpg
