@@ -1,13 +1,13 @@
 # RZD-tickets-backend
 
-## Стек бэкенда: 
+## Стек бэкенда:
 
 - FastAPI
 - httpx
 - Pydantic
-- Tortoise ORM 
+- Tortoise ORM
 
-### Для работы бекэнда необходимо сделать следующее: 
+### Для работы бекэнда необходимо сделать следующее:
 
 Установить все необходимые библиотеки из файла ``requirements.txt``
 
@@ -18,9 +18,21 @@ SECRET_KEY
 ALGORITHM for example HS256
 ACCESS_TOKEN_EXPIRES_MINUTES
 REFRESH_TOKEN_EXPIRES_MINUTES
+
+
+POSTGRES_SERVER
+POSTGRES_PORT
+POSTGRES_USER
+POSTGRES_PASSWORD
+POSTGRES_DB
 ```
 
-Для запуска тестов использовать команду: 
+Для запуска контейнера с базой данных использовать команду:
+```bash
+docker-compose --env-file ./app/.env up
+```
+
+Для запуска тестов использовать команду:
 
 ```bash
 pytest
@@ -38,4 +50,4 @@ fastapi dev ./app/main.py
 fastapi run ./app/main.py
 ```
 
-На ``localhost:8000/docs`` будет доступна open-api документация 
+На ``localhost:8000/docs`` будет доступна open-api документация
